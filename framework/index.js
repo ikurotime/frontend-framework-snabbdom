@@ -1,12 +1,31 @@
-import { eventListenersModule } from 'snabbdom';
-const patch = snabbdom.init([eventListenersModule]);
+import { eventListenersModule, init as snabbdomInit } from 'snabbdom';
+const patch = snabbdomInit([eventListenersModule]);
 
 export const init = (selector, component) => {
   const app = document.querySelector(selector);
   patch(app, component.template);
 };
 
-export const createComponent =
-  ({ template, methods = {}, initialState = {} }) =>
-  (props) =>
-    template(props);
+let state = {};
+
+export const createComponent = ({
+  template,
+  methods = {},
+  initialState = {}
+}) => {
+  state = initialState;
+
+  const mappedMethods = Object.keys(methods).reduce(
+    (acc, key) => ({
+      ...acc,
+      [key]: (...args) => {
+        state = methods[key](state, ...args);
+        console.log(state); // this prints "Thomas" as firstName :D
+        return state;
+      }
+    }),
+    {}
+  );
+
+  return (props) => template({ ...props, ...state, methods: mappedMethods });
+};
